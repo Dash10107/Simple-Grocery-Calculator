@@ -13,47 +13,6 @@ class GroceryShop:
 
         self.cart_frame = tk.Frame(root)
         self.cart_frame.pack(side=tk.RIGHT)
-
-        self.display_grocery_items()
-
-        self.custom_item_window = None
-        self.custom_item_name_entry = None
-        self.custom_item_price_entry = None
-        self.custom_item_quantity_entry = None
-
-        self.row_index = 1  # Initialize the row index for cart items
-
-        self.add_custom_item_button = None
-        self.generate_bill_button = None
-
-        self.create_buttons_frame()  # Create a frame for buttons
-        self.display_buttons()  # Display the buttons
-
-        self.display_cart()
-
-    def add_to_cart(self, item_name, item_price, quantity=1):
-        if item_name in self.cart:
-            self.cart[item_name]['quantity'] += quantity
-        else:
-            self.cart[item_name] = {'quantity': quantity, 'price': item_price}
-        self.total_price += item_price * quantity
-        self.display_cart()
-
-    def generate_bill(self, discount_percentage):
-        bill_window = tk.Toplevel(self.root)
-        bill_window.title("Bill")
-        bill_window.geometry("400x300")
-        bill_text = "Item\tQuantity\tPrice\n"
-        for item, info in self.cart.items():
-            bill_text += f"{item}\t{info['quantity']}\t{info['quantity'] * info['price']:.2f}\n"
-        discount = (discount_percentage / 100) * self.total_price
-        bill_text += f"Subtotal: {self.total_price:.2f}\n"
-        bill_text += f"Discount: {discount:.2f}\n"
-        bill_text += f"Total Price: {self.total_price - discount:.2f}"
-        bill_label = tk.Label(bill_window, text=bill_text)
-        bill_label.pack()
-
-    def display_grocery_items(self):
         self.item_prices = {
             "Toor dal": 80,
             "Maysure dal": 30,
@@ -71,24 +30,103 @@ class GroceryShop:
             "All purpose flour": 52,
             "Rice flour": 42
         }
-        for item, price in self.item_prices.items():
-            item_frame = tk.Frame(self.item_frame)
-            item_frame.pack()
-            item_label = tk.Label(item_frame, text=f"{item} - Rs{price:.2f}")
-            item_label.pack()
-            add_to_cart_button = tk.Button(item_frame, text="Add to Cart", command=lambda item=item, price=price: self.add_to_cart(item, price))
-            add_to_cart_button.pack()
+        self.display_grocery_items()
+
+        self.custom_item_window = None
+        self.custom_item_name_entry = None
+        self.custom_item_price_entry = None
+        self.custom_item_quantity_entry = None
+
+        self.row_index = 1  # Initialize the row index for cart items
+
+        self.add_custom_item_button = None
+        self.generate_bill_button = None
+
+        self.create_buttons_frame()  # Create a frame for buttons
+        self.display_buttons()  # Display the buttons
+
+        self.display_cart()
+        self.search_frame = tk.Frame(root)
+        self.search_frame.pack(side=tk.TOP)
+        self.search_label = tk.Label(self.search_frame, text="Search Item:")
+        self.search_label.grid(row=0, column=0)
+        self.search_entry = tk.Entry(self.search_frame, width=20)
+        self.search_entry.grid(row=0, column=1)
+        self.search_button = tk.Button(self.search_frame, text="Search", command=self.search_items)
+        self.search_button.grid(row=0, column=2)
+
+        self.display_grocery_items()
+
+    def search_items(self):
+            keyword = self.search_entry.get()
+            if keyword:
+                # Filter and display only items that contain the keyword
+                filtered_items = {item: price for item, price in self.item_prices.items() if keyword.lower() in item.lower()}
+                self.display_grocery_items(filtered_items)
+            else:
+                # If the search bar is empty, display all items
+                self.display_grocery_items(self.item_prices)
+                
+    def add_to_cart(self, item_name, item_price, quantity=1):
+        if item_name in self.cart:
+            self.cart[item_name]['quantity'] += quantity
+        else:
+            self.cart[item_name] = {'quantity': quantity, 'price': item_price}
+        self.total_price += item_price * quantity
+        self.display_cart()
+
+    def remove_from_cart(self, item_name):
+        if item_name in self.cart:
+            item_info = self.cart[item_name]
+            if item_info['quantity'] > 1:
+                item_info['quantity'] -= 1
+            else:
+                del self.cart[item_name]
+            self.total_price -= item_info['price']
+            self.display_cart()
+
+    def generate_bill(self, discount_percentage):
+        bill_window = tk.Toplevel(self.root)
+        bill_window.title("Bill")
+        bill_window.geometry("400x300")
+        bill_text = "Item\tQuantity\tPrice\n"
+        for item, info in self.cart.items():
+            bill_text += f"{item}\t{info['quantity']}\t{info['quantity'] * info['price']:.2f}\n"
+        discount = (discount_percentage / 100) * self.total_price
+        bill_text += f"Subtotal: {self.total_price:.2f}\n"
+        bill_text += f"Discount: {discount:.2f}\n"
+        bill_text += f"Total Price: {self.total_price - discount:.2f}"
+        bill_label = tk.Label(bill_window, text=bill_text)
+        bill_label.pack()
+
+    def display_grocery_items(self, items=None):
+            if items is None:
+                items = self.item_prices
+
+            for widget in self.item_frame.winfo_children():
+                widget.destroy()
+
+            for item, price in items.items():
+                item_frame = tk.Frame(self.item_frame)
+                item_frame.pack()
+                item_label = tk.Label(item_frame, text=f"{item} - Rs{price:.2f}")
+                item_label.pack()
+                add_to_cart_button = tk.Button(item_frame, text="Add to Cart", command=lambda item=item, price=price: self.add_to_cart(item, price))
+                add_to_cart_button.pack()
 
     def display_cart(self):
         for widget in self.cart_frame.winfo_children():
             widget.destroy()
 
         cart_label = tk.Label(self.cart_frame, text="Your Cart:")
-        cart_label.grid(row=0, column=0, columnspan=2)
+        cart_label.grid(row=0, column=0, columnspan=3)
 
         for item, info in self.cart.items():
             cart_item_label = tk.Label(self.cart_frame, text=f"{item} x{info['quantity']} - Rs{info['price']:.2f}")
             cart_item_label.grid(row=self.row_index, column=0, columnspan=2)
+
+            remove_button = tk.Button(self.cart_frame, text="Remove", command=lambda item=item: self.remove_from_cart(item))
+            remove_button.grid(row=self.row_index, column=2)
             self.row_index += 1
 
     def create_buttons_frame(self):
